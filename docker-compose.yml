@@ -1,0 +1,48 @@
+# payment-service/docker-compose.yml
+version: '3.8'
+services:
+  payment-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - '3003:3000'
+    env_file:
+      - .env
+    depends_on:
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - shared-network
+  redis:
+    image: redis:6
+    ports:
+      - '6381:6379'
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - shared-network
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - '5674:5672'
+      - '15674:15672'
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - shared-network
+networks:
+  shared-network:
+    name: shared-network
+    external: true
